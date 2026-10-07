@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -67,6 +68,15 @@ def main():
 
     config = build_default_config()
     config["results_dir"] = a.results_dir
+    # TradingAgents has no dated source of Korean statements (EDGAR is US-only, Yahoo is
+    # withheld from historical runs), so KR fundamentals would be empty. DART dates every
+    # report; it is registered here so the TradingAgents checkout stays unmodified.
+    if os.getenv("DART_API_KEY"):
+        import dart_vendor
+        dart_vendor.register(config)
+        print("fundamentals: DART point-in-time statements for KR tickers (EDGAR for US)")
+    else:
+        print("WARNING: DART_API_KEY not set -> KR fundamentals will be empty (price-only runs)")
     analysts = tuple(x.strip() for x in a.analysts.split(",") if x.strip())
     run_id = a.run_id or time.strftime("kr_s1_%Y%m%d_%H%M%S")
 
